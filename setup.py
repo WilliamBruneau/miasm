@@ -61,6 +61,7 @@ def buil_all():
         "miasm/jitter/loader",
     ]
     ext_modules_all = [
+<<<<<<< HEAD
         Extension(
             "miasm.jitter.VmMngr",
             [
