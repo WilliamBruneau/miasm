@@ -72,11 +72,15 @@ class JitCore_Cc_Base(JitCore):
     def deleteCB(self, offset):
         raise NotImplementedError()
 
-    def load(self):
+    def load(self, taint):
+        self.taint = taint
         lib_dir = os.path.dirname(os.path.realpath(__file__))
         ext = sysconfig.get_config_var('EXT_SUFFIX')
         if ext is None:
             ext = ".so" if not is_win else ".lib"
+
+        if taint:
+            ext = "_taint" + ext 
 
         libs = [
             os.path.join(lib_dir, "VmMngr" + ext),
