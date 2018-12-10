@@ -151,10 +151,6 @@ def buil_all():
             ]
         ),
         Extension(
-            "miasm2.jitter.VmMngr_taint",
-            sources = ["miasm2/jitter/vm_mngr.c",
-                   "miasm2/jitter/vm_mngr_py.c"]),
-        Extension(
             "miasm.jitter.VmMngr_taint",
             define_macros = [('TAINT', None)],
             [
@@ -346,7 +342,7 @@ def buil_all():
         for lib in libs:
             filename = os.path.basename(lib)
             dst = os.path.join(build_base, lib_dirname, "miasm", "jitter")
-            if filename not in ["VmMngr.lib", "Jitgcc.lib", "Jitllvm.lib"]:
+            if filename not in ["VmMngr.lib", "VmMngr_taint.lib", "Jitgcc.lib", "Jitllvm.lib"]:
                 dst = os.path.join(dst, "arch")
             dst = os.path.join(dst, filename)
             if not os.path.isfile(dst):
