@@ -1,6 +1,6 @@
 """Data flow analysis based on miasm intermediate representation"""
 from builtins import range
-from collections import namedtuple
+from collections import namedtuple, deque
 
 from future.utils import viewitems, viewvalues
 from miasm.core.utils import encode_hex
@@ -2438,13 +2438,13 @@ class PropagateWithSymbolicExec(object):
         return symb_exec.state
 
     def get_states(self, head):
-        todo = set([head])
+        todo = deque([head])
         self.states = {}
         for loc_key in todo:
             self.states[loc_key] = {}
 
         while todo:
-            loc_key = todo.pop()
+            loc_key = todo.popleft()
             if loc_key not in self.ircfg.blocks:
                 continue
             if loc_key == head:
@@ -2466,7 +2466,7 @@ class PropagateWithSymbolicExec(object):
 
             self.states[loc_key] = new_state
             for succ in self.ircfg.successors(loc_key):
-                todo.add(succ)
+                todo.append(succ)
 
     def do_replacement(self, head):
         modified = False
