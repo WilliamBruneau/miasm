@@ -59,6 +59,7 @@ def buil_all():
         "miasm/jitter",
         "miasm/jitter/arch",
         "miasm/jitter/loader",
+        "miasm/jitter/interval_tree",
     ]
     ext_modules_all = [
         Extension(
@@ -67,6 +68,13 @@ def buil_all():
                 "miasm/jitter/vm_mngr.c",
                 "miasm/jitter/vm_mngr_py.c",
                 "miasm/jitter/bn.c",
+            ]
+        ),
+        Extension(
+            "miasm.jitter.interval_tree",
+            [
+                "miasm/jitter/interval_tree/interval_tree.c",
+                "miasm/jitter/interval_tree/rbtree.c",
             ]
         ),
         Extension(
@@ -290,6 +298,7 @@ def buil_all():
                         "jitter/*.h",
                         "jitter/arch/*.h",
                         "analysis/*.h",
+                        "core/interval_tree/*.h",
                         "VERSION"
                     ]
                 },
