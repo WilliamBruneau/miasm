@@ -59,7 +59,6 @@ def buil_all():
         "miasm/jitter",
         "miasm/jitter/arch",
         "miasm/jitter/loader",
-        "miasm/jitter/interval_tree",
     ]
     ext_modules_all = [
         Extension(
@@ -68,13 +67,6 @@ def buil_all():
                 "miasm/jitter/vm_mngr.c",
                 "miasm/jitter/vm_mngr_py.c",
                 "miasm/jitter/bn.c",
-            ]
-        ),
-        Extension(
-            "miasm.jitter.interval_tree",
-            [
-                "miasm/jitter/interval_tree/interval_tree.c",
-                "miasm/jitter/interval_tree/rbtree.c",
             ]
         ),
         Extension(
@@ -179,6 +171,8 @@ def buil_all():
                 "miasm/jitter/vm_mngr.c",
                 "miasm/jitter/vm_mngr_py.c",
                 "miasm/jitter/op_semantics.c",
+                "miasm/jitter/interval_tree/rbtree.c",
+                "miasm/jitter/interval_tree/interval_tree.c",
                 "miasm/analysis/taint_analysis.c",
                 "miasm/jitter/bn.c",
                 "miasm/jitter/arch/JitCore_arm.c"
@@ -192,6 +186,8 @@ def buil_all():
                 "miasm/jitter/vm_mngr.c",
                 "miasm/jitter/vm_mngr_py.c",
                 "miasm/jitter/op_semantics.c",
+                "miasm/jitter/interval_tree/rbtree.c",
+                "miasm/jitter/interval_tree/interval_tree.c",
                 "miasm/analysis/taint_analysis.c",
                 "miasm/jitter/bn.c",
                 "miasm/jitter/arch/JitCore_aarch64.c"
@@ -205,6 +201,8 @@ def buil_all():
                 "miasm/jitter/vm_mngr.c",
                 "miasm/jitter/vm_mngr_py.c",
                 "miasm/jitter/op_semantics.c",
+                "miasm/jitter/interval_tree/rbtree.c",
+                "miasm/jitter/interval_tree/interval_tree.c",
                 "miasm/analysis/taint_analysis.c",
                 "miasm/jitter/bn.c",
                 "miasm/jitter/arch/JitCore_msp430.c"
@@ -218,6 +216,8 @@ def buil_all():
                 "miasm/jitter/vm_mngr.c",
                 "miasm/jitter/vm_mngr_py.c",
                 "miasm/jitter/op_semantics.c",
+                "miasm/jitter/interval_tree/rbtree.c",
+                "miasm/jitter/interval_tree/interval_tree.c",
                 "miasm/analysis/taint_analysis.c",
                 "miasm/jitter/bn.c",
                 "miasm/jitter/arch/JitCore_mep.c"
@@ -231,6 +231,8 @@ def buil_all():
                 "miasm/jitter/vm_mngr.c",
                 "miasm/jitter/vm_mngr_py.c",
                 "miasm/jitter/op_semantics.c",
+                "miasm/jitter/interval_tree/rbtree.c",
+                "miasm/jitter/interval_tree/interval_tree.c",
                 "miasm/analysis/taint_analysis.c",
                 "miasm/jitter/bn.c",
                 "miasm/jitter/arch/JitCore_mips32.c"
@@ -244,6 +246,8 @@ def buil_all():
                 "miasm/jitter/vm_mngr.c",
                 "miasm/jitter/vm_mngr_py.c",
                 "miasm/jitter/op_semantics.c",
+                "miasm/jitter/interval_tree/rbtree.c",
+                "miasm/jitter/interval_tree/interval_tree.c",
                 "miasm/analysis/taint_analysis.c",
                 "miasm/jitter/bn.c",
                 "miasm/jitter/arch/JitCore_ppc32.c"
@@ -355,7 +359,7 @@ def buil_all():
         for lib in libs:
             filename = os.path.basename(lib)
             dst = os.path.join(build_base, lib_dirname, "miasm", "jitter")
-            if filename not in ["VmMngr.lib", "VmMngr_taint.lib", "Jitgcc.lib", "Jitllvm.lib"]:
+            if filename not in ["VmMngr.lib", "Jitgcc.lib", "Jitllvm.lib"]:
                 dst = os.path.join(dst, "arch")
             dst = os.path.join(dst, filename)
             if not os.path.isfile(dst):
