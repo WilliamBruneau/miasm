@@ -64,7 +64,7 @@ def start_analysis(jitter, libs, libbase, fname):
 
 def on_taint_memory(jitter):
     taint.display_all_taint(jitter)
-    last_mem = jitter.cpu.last_tainted_memory(0)
+    last_mem = jitter.cpu.last_tainted_memory(0) #color index
     addr, size = last_mem[0]
     print("\t[>] FOUND : %x->%s" % (addr, fname_global))
     lib_add_dst_ad(libs_global, libbase_global, fname_global, addr) # Add the import (use during PE rebuild)

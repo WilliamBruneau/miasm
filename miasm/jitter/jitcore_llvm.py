@@ -4,6 +4,7 @@ import importlib
 import tempfile
 import sysconfig
 
+from miasm.analysis.taint_llvm_utils import LLVMFunction_Taint, LLVMContext_JIT_Taint
 from miasm.jitter.llvmconvert import *
 import miasm.jitter.jitcore as jitcore
 from miasm.jitter import Jitllvm
@@ -24,11 +25,12 @@ class JitCore_LLVM(jitcore.JitCore):
         "ppc32": "JitCore_ppc32",
     }
 
-    def __init__(self, ir_arch, bin_stream):
+    def __init__(self, ir_arch, bin_stream, taint=False):
         super(JitCore_LLVM, self).__init__(ir_arch, bin_stream)
 
         self.options.update(
             {
+                "show_context": False,
                 "safe_mode": True,   # Verify each function
                 "optimise": True,     # Optimise functions
                 "log_func": False,    # Print LLVM functions
@@ -38,8 +40,9 @@ class JitCore_LLVM(jitcore.JitCore):
 
         self.exec_wrapper = Jitllvm.llvm_exec_block
         self.ir_arch = ir_arch
-
+        self.taint = taint 
         # Cache temporary dir
+        # Mighy create another cache temporary dir for taint?
         self.tempdir = os.path.join(tempfile.gettempdir(), "miasm_cache")
         try:
             os.mkdir(self.tempdir, 0o755)
@@ -49,10 +52,7 @@ class JitCore_LLVM(jitcore.JitCore):
             raise RuntimeError(
                 'Cannot access cache directory %s ' % self.tempdir)
 
-    def load(self, taint):
-
-        if taint:
-            raise NotImplementedError("JitCore_LLVM does not support taint analysis yet !")
+    def load(self):
         # Library to load within Jit context
         libs_to_load = []
 
@@ -63,15 +63,20 @@ class JitCore_LLVM(jitcore.JitCore):
         if ext is None:
             ext = ".so" if not is_win else ".pyd"
         try:
+            libname = self.arch_dependent_libs[self.ir_arch.arch.name]
+            libname = libname + "_taint" + ext if self.taint else libname + ext
             jit_lib = os.path.join(
-                lib_dir, self.arch_dependent_libs[self.ir_arch.arch.name] + ext
+                lib_dir, libname
             )
             libs_to_load.append(jit_lib)
         except KeyError:
             pass
-
+        
         # Create a context
-        self.context = LLVMContext_JIT(libs_to_load, self.ir_arch)
+        if self.taint:
+            self.context = LLVMContext_JIT_Taint(libs_to_load, self.ir_arch)
+        else:
+            self.context = LLVMContext_JIT(libs_to_load, self.ir_arch)
 
         # Set the optimisation level
         self.context.optimise_level()
@@ -81,9 +86,9 @@ class JitCore_LLVM(jitcore.JitCore):
 
         # Get the correspondence between registers and vmcpu struct
         mod_name = "miasm.jitter.arch.JitCore_%s" % (self.ir_arch.arch.name)
+        mod = mod_name + "_taint" if self.taint else mod_name
         mod = importlib.import_module(mod_name)
         self.context.set_vmcpu(mod.get_gpreg_offset_all())
-
         # Enable caching
         self.context.enable_cache()
 
@@ -91,13 +96,17 @@ class JitCore_LLVM(jitcore.JitCore):
         """Add a block to JiT and JiT it.
         @block: the block to add
         """
-
         block_hash = self.hash_block(block)
         fname_out = os.path.join(self.tempdir, "%s.bc" % block_hash)
-
         if not os.access(fname_out, os.R_OK):
             # Build a function in the context
-            func = LLVMFunction(self.context, self.FUNCNAME)
+            if self.taint:  
+                func = LLVMFunction_Taint(self.context, self.FUNCNAME)
+            else:
+                func = LLVMFunction(self.context, self.FUNCNAME)
+            # Show the context created
+            if self.options["show_context"] is True:
+                print(func)
 
             # Set log level
             func.log_regs = self.log_regs
@@ -105,7 +114,6 @@ class JitCore_LLVM(jitcore.JitCore):
 
             # Import asm block
             func.from_asmblock(block)
-
             # Verify
             if self.options["safe_mode"] is True:
                 func.verify()

@@ -160,6 +160,7 @@ def buil_all():
                 "miasm/jitter/interval_tree/interval.c",
                 "miasm/jitter/interval_tree/interval_tree.c",
                 "miasm/analysis/taint.c",
+                "miasm/analysis/taint_llvm.c",
                 "miasm/jitter/bn.c",
                 "miasm/jitter/arch/JitCore_x86.c"
             ],

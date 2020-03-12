@@ -14,6 +14,7 @@
 from builtins import zip
 from builtins import range
 import os
+import pdb
 from llvmlite import binding as llvm
 from llvmlite import ir as llvm_ir
 from builtins import int as int_types
@@ -1208,7 +1209,7 @@ class LLVMFunction(object):
             raise NotImplementedError()
 
         if isinstance(expr, ExprMem):
-
+            pdb.set_trace()
             addr = self.add_ir(expr.ptr)
             ret = self.llvm_context.memory_lookup(self, addr, expr.size)
             self.update_cache(expr, ret)
@@ -1731,6 +1732,7 @@ class LLVMFunction(object):
         # TODO: merge duplicate code with CGen
         codegen = self.llvm_context.cgen_class(self.llvm_context.ir_arch)
         irblocks_list = codegen.block2assignblks(asmblock)
+        pdb.set_trace()
         instr_offsets = [line.offset for line in asmblock.lines]
 
         # Prepare for delayslot

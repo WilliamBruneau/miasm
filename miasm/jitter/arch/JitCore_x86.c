@@ -1,7 +1,7 @@
 #include <Python.h>
 #include "structmember.h"
-#include <stdint.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include "../compat_py23.h"
 #include "../queue.h"
 #include "../vm_mngr.h"
@@ -11,6 +11,7 @@
 #include "../op_semantics.h"
 #ifdef TAINT
 #include "../../analysis/taint.h"
+#include "../../analysis/taint_llvm.h"
 #endif
 #include "JitCore_x86.h"
 
@@ -466,8 +467,6 @@ void MEM_WRITE_64(JitCpu* jitcpu, uint64_t addr, uint64_t src)
 {
 	vm_MEM_WRITE_64(&((VmMngr*)jitcpu->pyvm)->vm_mngr, addr, src);
 }
-
-
 
 static PyMemberDef JitCpu_members[] = {
     {NULL}  /* Sentinel */
