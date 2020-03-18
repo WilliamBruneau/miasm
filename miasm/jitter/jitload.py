@@ -186,7 +186,6 @@ class Jitter(object):
         self.arch = ir_arch.arch
         self.attrib = ir_arch.attrib
         arch_name = ir_arch.arch.name  # (ir_arch.arch.name, ir_arch.attrib)
-
         try:
             if taint:
                 if arch_name == "x86":
@@ -243,7 +242,6 @@ class Jitter(object):
             self.cpu, self.vm, self.ir_arch, {}
         )
         self.symbexec.reset_regs()
-
         try:
             if jit_type == "llvm":
                 from miasm.jitter.jitcore_llvm import JitCore_LLVM as JitCore
@@ -257,8 +255,6 @@ class Jitter(object):
             raise RuntimeError('Unsupported jitter: %s' % jit_type)
 
         if taint :
-            # Only GCC supports taint analysis for now
-	        # Not anymore
             self.jit = JitCore(self.ir_arch, self.bs, taint)
         else:
             self.jit = JitCore(self.ir_arch, self.bs)
@@ -354,7 +350,6 @@ class Jitter(object):
     def run_at(self, pc):
         """Wrapper on JiT backend. Run the code at PC and return the next PC.
         @pc: address of code to run"""
-
         return self.jit.run_at(
             self.cpu, pc,
             set(self.breakpoints_handler.callbacks)

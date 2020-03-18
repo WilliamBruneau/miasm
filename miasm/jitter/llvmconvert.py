@@ -1209,7 +1209,6 @@ class LLVMFunction(object):
             raise NotImplementedError()
 
         if isinstance(expr, ExprMem):
-            pdb.set_trace()
             addr = self.add_ir(expr.ptr)
             ret = self.llvm_context.memory_lookup(self, addr, expr.size)
             self.update_cache(expr, ret)
@@ -1231,7 +1230,6 @@ class LLVMFunction(object):
         if isinstance(expr, ExprSlice):
 
             src = self.add_ir(expr.arg)
-
             # Remove trailing bits
             if expr.start != 0:
                 to_shr = llvm_ir.Constant(
@@ -1543,8 +1541,8 @@ class LLVMFunction(object):
         case2dst = None
         case_value = None
         instr = instr_attrib.instr
-
         for index, assignblk in enumerate(irblock):
+            print(irblock)
             # Enable cache
             self.main_stream = True
             self.expr_cache = {}
@@ -1553,7 +1551,6 @@ class LLVMFunction(object):
             for element in assignblk.get_r(mem_read=True):
                 if isinstance(element, ExprMem):
                     self.add_ir(element)
-
             # Evaluate expressions
             values = {}
             for dst, src in viewitems(assignblk):
@@ -1728,11 +1725,9 @@ class LLVMFunction(object):
         for instr in asmblock.lines:
             lbl = self.llvm_context.ir_arch.loc_db.get_or_create_offset_location(instr.offset)
             self.append_basic_block(lbl)
-
         # TODO: merge duplicate code with CGen
         codegen = self.llvm_context.cgen_class(self.llvm_context.ir_arch)
         irblocks_list = codegen.block2assignblks(asmblock)
-        pdb.set_trace()
         instr_offsets = [line.offset for line in asmblock.lines]
 
         # Prepare for delayslot
@@ -1752,7 +1747,6 @@ class LLVMFunction(object):
         # Add content
         builder.position_at_end(entry_bbl)
 
-
         for instr, irblocks in zip(asmblock.lines, irblocks_list):
             instr_attrib, irblocks_attributes = codegen.get_attributes(
                 instr,
@@ -1764,12 +1758,10 @@ class LLVMFunction(object):
             # Pre-create basic blocks
             for irblock in irblocks:
                 self.append_basic_block(irblock.loc_key, overwrite=False)
-
             # Generate the corresponding code
             for index, irblock in enumerate(irblocks):
                 new_irblock = self.llvm_context.ir_arch.irbloc_fix_regs_for_mode(
                     irblock, self.llvm_context.ir_arch.attrib)
-
                 # Set the builder at the beginning of the correct bbl
                 self.builder.position_at_end(self.get_basic_block_by_loc_key(new_irblock.loc_key))
 

@@ -7,7 +7,7 @@
 
 struct interval_tree_node {
 	struct rb_node rb;
-    struct interval interval;
+  struct interval interval;
 	unsigned long __subtree_last;
 };
 
