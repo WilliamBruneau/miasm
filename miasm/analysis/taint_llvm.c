@@ -21,8 +21,8 @@ taint_llvm_get_register_color(JitCpu* jitter, uint64_t color_index,
 {
    struct interval interval;
    struct rb_root* bits_checked = malloc(sizeof(struct rb_root));
-   struct taint_colors_t* colors;
-   colors = jitter->taint_analysis;
+   struct taint_t* colors;
+   colors = jitter->taint->taint;
    interval.start = start_interval;
    interval.last = stop_interval;
    *bits_checked = taint_get_register_color(colors, color_index, register_index, interval);

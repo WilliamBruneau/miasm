@@ -113,8 +113,8 @@ def enable_taint_analysis(jitter, nb_colors = 1):
     raise "At least 1 color is required to enable taint analysis"
   try:
     nb_regs = init_registers_index(jitter)
-    jitter.cpu.init_taint_analysis(nb_colors, nb_regs)
+    jitter.taint.init_taint_analysis(nb_colors, nb_regs)
     jitter.jit.context.nb_colors = nb_colors
   except:
-    print("The jitter should be set to llvm")
+    print("No LLVMContext created, the jitter should be set to llvm")
     sys.exit(0)

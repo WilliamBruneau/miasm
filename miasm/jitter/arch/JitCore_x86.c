@@ -9,9 +9,6 @@
 #include "../vm_mngr_py.h"
 #include "../JitCore.h"
 #include "../op_semantics.h"
-#ifdef TAINT
-#include "../../analysis/taint_llvm.h"
-#endif
 #include "JitCore_x86.h"
 
 

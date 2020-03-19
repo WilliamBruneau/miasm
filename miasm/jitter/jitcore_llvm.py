@@ -40,9 +40,9 @@ class JitCore_LLVM(jitcore.JitCore):
 
         self.exec_wrapper = Jitllvm.llvm_exec_block
         self.ir_arch = ir_arch
-        self.taint = taint 
+        self.taint = taint
         # Cache temporary dir
-        # Mighy create another cache temporary dir for taint?
+        # TODO:Mighy create another cache temporary dir for taint?
         self.tempdir = os.path.join(tempfile.gettempdir(), "miasm_cache")
         try:
             os.mkdir(self.tempdir, 0o755)
@@ -58,17 +58,15 @@ class JitCore_LLVM(jitcore.JitCore):
 
         # Get architecture dependent Jitcore library (if any)
         lib_dir = os.path.dirname(os.path.realpath(__file__))
-        lib_dir = os.path.join(lib_dir, 'arch')
         ext = sysconfig.get_config_var('EXT_SUFFIX')
         if ext is None:
             ext = ".so" if not is_win else ".pyd"
         try:
-            libname = self.arch_dependent_libs[self.ir_arch.arch.name]
-            libname = libname + "_taint" + ext if self.taint else libname + ext
-            jit_lib = os.path.join(
-                lib_dir, libname
-            )
+            libname = self.arch_dependent_libs[self.ir_arch.arch.name] + ext
+            jit_lib = os.path.join(lib_dir, "arch/" + libname)
+            taint_lib = os.path.join(lib_dir, "../analysis/TaintMngr" + ext)
             libs_to_load.append(jit_lib)
+            libs_to_load.append(taint_lib)
         except KeyError:
             pass
         
@@ -86,7 +84,6 @@ class JitCore_LLVM(jitcore.JitCore):
 
         # Get the correspondence between registers and vmcpu struct
         mod_name = "miasm.jitter.arch.JitCore_%s" % (self.ir_arch.arch.name)
-        mod = mod_name + "_taint" if self.taint else mod_name
         mod = importlib.import_module(mod_name)
         self.context.set_vmcpu(mod.get_gpreg_offset_all())
         # Enable caching

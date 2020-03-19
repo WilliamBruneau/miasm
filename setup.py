@@ -82,6 +82,7 @@ def buil_all():
                 "miasm/jitter/interval_tree/interval_tree.c",
                 "miasm/analysis/taint.c",
                 "miasm/analysis/taint_py.c",
+                "miasm/analysis/taint_llvm.c",
             ]
         ),
         Extension(
