@@ -187,47 +187,25 @@ class Jitter(object):
         self.attrib = ir_arch.attrib
         arch_name = ir_arch.arch.name  # (ir_arch.arch.name, ir_arch.attrib)
         try:
-            if taint:
-                if arch_name == "x86":
-                    from miasm.jitter.arch import JitCore_x86_taint as jcore
-                elif arch_name == "arm":
-                    from miasm.jitter.arch import JitCore_arm_taint as jcore
-                elif arch_name == "armt":
-                    from miasm.jitter.arch import JitCore_arm_taint as jcore
-                    ir_arch.arch.name = 'arm'
-                elif arch_name == "aarch64":
-                    from miasm.jitter.arch import JitCore_aarch64_taint as jcore
-                elif arch_name == "msp430":
-                    from miasm.jitter.arch import JitCore_msp430_taint as jcore
-                elif arch_name == "mips32":
-                    from miasm.jitter.arch import JitCore_mips32_taint as jcore
-                elif arch_name == "ppc32":
-                    from miasm.jitter.arch import JitCore_ppc32_taint as jcore
-                elif arch_name == "mep":
-                    from miasm.jitter.arch import JitCore_mep_taint as jcore
-                else:
-                    raise ValueError("unknown jit arch: %s" % arch_name)
+            if arch_name == "x86":
+                from miasm.jitter.arch import JitCore_x86 as jcore
+            elif arch_name == "arm":
+                from miasm.jitter.arch import JitCore_arm as jcore
+            elif arch_name == "armt":
+                from miasm.jitter.arch import JitCore_arm as jcore
+                ir_arch.arch.name = 'arm'
+            elif arch_name == "aarch64":
+                from miasm.jitter.arch import JitCore_aarch64 as jcore
+            elif arch_name == "msp430":
+                from miasm.jitter.arch import JitCore_msp430 as jcore
+            elif arch_name == "mips32":
+                from miasm.jitter.arch import JitCore_mips32 as jcore
+            elif arch_name == "ppc32":
+                from miasm.jitter.arch import JitCore_ppc32 as jcore
+            elif arch_name == "mep":
+                from miasm.jitter.arch import JitCore_mep as jcore
             else:
-                if arch_name == "x86":
-                    from miasm.jitter.arch import JitCore_x86 as jcore
-                elif arch_name == "arm":
-                    from miasm.jitter.arch import JitCore_arm as jcore
-                elif arch_name == "armt":
-                    from miasm.jitter.arch import JitCore_arm as jcore
-                    ir_arch.arch.name = 'arm'
-                elif arch_name == "aarch64":
-                    from miasm.jitter.arch import JitCore_aarch64 as jcore
-                elif arch_name == "msp430":
-                    from miasm.jitter.arch import JitCore_msp430 as jcore
-                elif arch_name == "mips32":
-                    from miasm.jitter.arch import JitCore_mips32 as jcore
-                elif arch_name == "ppc32":
-                    from miasm.jitter.arch import JitCore_ppc32 as jcore
-                elif arch_name == "mep":
-                    from miasm.jitter.arch import JitCore_mep as jcore
-                else:
-                    raise ValueError("unknown jit arch: %s" % arch_name)
-
+                raise ValueError("unknown jit arch: %s" % arch_name)
 
         except ImportError:
             raise RuntimeError('Unsupported jit arch: %s' % arch_name)
@@ -242,6 +220,11 @@ class Jitter(object):
             self.cpu, self.vm, self.ir_arch, {}
         )
         self.symbexec.reset_regs()
+
+        if taint:
+            from miasm.analysis import TaintMngr
+            self.taint = TaintMngr.Taint()
+
         try:
             if jit_type == "llvm":
                 from miasm.jitter.jitcore_llvm import JitCore_LLVM as JitCore
@@ -271,6 +254,8 @@ class Jitter(object):
         self.jit.load()
         self.cpu.vmmngr = self.vm
         self.cpu.jitter = self.jit
+        if taint:
+            self.cpu.taint = self.taint
         self.stack_size = 0x10000
         self.stack_base = 0x1230000
 

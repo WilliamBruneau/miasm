@@ -9,17 +9,9 @@
 #include "../vm_mngr_py.h"
 #include "../JitCore.h"
 #include "../op_semantics.h"
-#ifdef TAINT
-#include "../../analysis/taint.h"
-#endif
 #include "JitCore_aarch64.h"
 
 
-#ifdef TAINT
-#define PYTHON_CLASS_NAME "JitCore_aarch64_taint"
-#else
-#define PYTHON_CLASS_NAME "JitCore_aarch64"
-#endif
 
 reg_dict gpreg_dict[] = {
 	{.name = "X0", .offset = offsetof(struct vm_cpu, X0), .size = 64},
@@ -268,9 +260,6 @@ static PyMethodDef JitCpu_methods[] = {
 	DEFAULT_METHODS
 	{"dump_gpregs_with_attrib", (PyCFunction)cpu_dump_gpregs_with_attrib, METH_VARARGS,
 	 "X"},
-#ifdef TAINT
-	TAINT_METHODS
-#endif
 
 	{NULL}  /* Sentinel */
 };
@@ -384,18 +373,7 @@ PyObject* get_gpreg_offset_all(void)
 
 
 static PyGetSetDef JitCpu_getseters[] = {
-    {"vmmngr",
-     (getter)JitCpu_get_vmmngr, (setter)JitCpu_set_vmmngr,
-     "vmmngr",
-     NULL},
-
-    {"jitter",
-     (getter)JitCpu_get_jitter, (setter)JitCpu_set_jitter,
-     "jitter",
-     NULL},
-
-
-
+    DEFAULT_GETSETERS
     {"X0" , (getter)JitCpu_get_X0 , (setter)JitCpu_set_X0 , "X0" , NULL},
     {"X1" , (getter)JitCpu_get_X1 , (setter)JitCpu_set_X1 , "X1" , NULL},
     {"X2" , (getter)JitCpu_get_X2 , (setter)JitCpu_set_X2 , "X2" , NULL},
@@ -450,7 +428,7 @@ static PyGetSetDef JitCpu_getseters[] = {
 
 static PyTypeObject JitCpuType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    PYTHON_CLASS_NAME".JitCpu",  /*tp_name*/
+    "JitCore_aarch64.JitCpu",  /*tp_name*/
     sizeof(JitCpu),            /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)JitCpu_dealloc,/*tp_dealloc*/
@@ -498,15 +476,12 @@ static PyMethodDef JitCore_aarch64_Methods[] = {
 };
 
 
-#ifdef TAINT
-MOD_INIT(JitCore_aarch64_taint)
-#else
+
 MOD_INIT(JitCore_aarch64)
-#endif
 {
 	PyObject *module = NULL;
 
-	MOD_DEF(module, PYTHON_CLASS_NAME, PYTHON_CLASS_NAME" module", JitCore_aarch64_Methods);
+	MOD_DEF(module, "JitCore_aarch64", "JitCore_aarch64 module", JitCore_aarch64_Methods);
 
 	if (module == NULL)
 		RET_MODULE;
@@ -520,3 +495,4 @@ MOD_INIT(JitCore_aarch64)
 
 	RET_MODULE;
 }
+
