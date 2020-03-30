@@ -22,12 +22,24 @@ class LLVMFunction_Taint(LLVMFunction):
     # Does not work every time :(
 
     jitcpu_struct_ptr = builder.alloca(self.llvm_context.jitcpu_type)
-    jitcpu_casted = (self.local_vars["jitcpu"], self.llvm_context.jitcpu_type.as_pointer())
+    jitcpu_casted = builder.bitcast(self.local_vars["jitcpu"], self.llvm_context.jitcpu_type.as_pointer())
     jitcpu_value = builder.load(jitcpu_casted)
-    builder.store(jicpu_value, jitcpu_struct_ptr)
-    PyTaint_ptr_ptr = builder.get(jitcpu_struct_ptr,[0,2])
-    PyTaint_ptr = builder.load(PyTaint_ptr)
-    taint_t_ptr_ptr = builder.gep(PyTaint_ptr,[0,1])
+    builder.store(jitcpu_value, jitcpu_struct_ptr)
+    PyTaint_ptr_ptr = builder.gep(
+        jitcpu_struct_ptr,
+        [
+            self.cst2llvmcst(0),
+            self.cst2llvmcst(2)
+        ]
+    )
+    PyTaint_ptr = builder.load(PyTaint_ptr_ptr)
+    taint_t_ptr_ptr = builder.gep(
+        PyTaint_ptr,
+        [
+            self.cst2llvmcst(0),
+            self.cst2llvmcst(1)
+        ]
+    )
     taint_t_ptr = builder.load(taint_t_ptr_ptr) 
     
     
@@ -82,9 +94,11 @@ class LLVMFunction_Taint(LLVMFunction):
           llvm_ir.IntType(8).as_pointer()
         )
 
-  
+    # Bitcast test
+    taint_t_cast = builder.bitcast(self.local_vars["taint_t"],llvm_ir.IntType(8).as_pointer())    
+ 
     #Call functions
-    builder.call(fc_simple, [self.local_vars["taint_t"]])
+    builder.call(fc_simple, [taint_t_cast])
     builder.call(
         fc_ptr, 
         [

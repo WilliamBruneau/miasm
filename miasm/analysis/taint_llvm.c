@@ -86,7 +86,7 @@ taint_llvm_get_register_color(JitCpu* jitter, uint64_t color_index,
     printf("reg_index = %" PRIu64 "\n", register_index);
     printf("interval start = %lu\n", interval.start);
     printf("interval stop = %lu\n", interval.last);
-    printf("addr of taint %p", jitter->)
+    printf("addr of taint %p\n", jitter->taint->taint);
     if (jitter == NULL){
       printf("thats kinda weird\n");
     }
