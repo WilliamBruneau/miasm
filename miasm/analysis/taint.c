@@ -141,6 +141,19 @@ taint_get_register_color(struct taint_t *colors,
              struct interval interval
              )
 {
+    // TODO Erase
+    printf("Doing some tests inside this function\n");
+    printf("color_index = %" PRIu64 "\n", color_index);
+    printf("reg_index = %" PRIu64 "\n", register_index);
+    printf("interval start = %ld\n",interval.start);
+    printf("intervall stop = %ld\n",interval.last);
+    if (colors == NULL){
+      printf("thats kinda weird\n");
+    }
+    else{
+      printf("now we cooking\n");
+      printf("nb of colors : %" PRIu64"\n",colors->nb_colors);
+    }
     return taint_get_register(colors->colors[color_index].registers,
                   register_index,
                   interval,

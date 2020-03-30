@@ -247,7 +247,6 @@ class LLVMContext_JIT(LLVMContext):
 
         # Load additional libraries
         for lib_fname in self.library_filenames:
-            print(self.library_filenames)
             self.add_shared_library(lib_fname)
 
     def new_module(self, name="mod"):
@@ -1543,7 +1542,6 @@ class LLVMFunction(object):
         case_value = None
         instr = instr_attrib.instr
         for index, assignblk in enumerate(irblock):
-            print(irblock)
             # Enable cache
             self.main_stream = True
             self.expr_cache = {}

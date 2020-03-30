@@ -1,3 +1,6 @@
+#include "../jitter/interval_tree/interval_tree.h"
+#include "../jitter/vm_mngr.h"
+#include "../jitter/arch/JitCore_x86.h"
 #if _WIN32
 #define _MIASM_EXPORT __declspec(dllexport)
 #else
@@ -15,8 +18,12 @@ This function is a wrapper of "taint_get_register_color", made specifically to b
 @param stop_interval The bit number to stop the checking
 @return Returns a pointer to a rb_root structure containing the bits checked 
 */
-_MIASM_EXPORT struct rb_root* taint_llvm_get_register_color(JitCpu* jitter,
-                                                            uint64_t color_index,
-                                                            uint64_t register_index,
-                                                            uint64_t start_interval,
-                                                            uint64_t stop_interval);
+_MIASM_EXPORT void taint_llvm_get_register_color(JitCpu* jitter,
+                                                 uint64_t color_index,
+                                                 uint64_t register_index,
+                                                 struct interval interval,
+                                                 char* ptr);
+
+_MIASM_EXPORT struct rb_root taint_llvm_test( struct taint_t* colors, uint64_t color_index,uint64_t register_index, struct interval interval);
+_MIASM_EXPORT struct rb_root* simple_llvm(struct taint_t *colors);
+_MIASM_EXPORT struct taint_t* get_taint_pointer( JitCpu *jitter);
