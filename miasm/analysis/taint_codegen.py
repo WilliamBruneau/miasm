@@ -207,7 +207,7 @@ def makeTaintGen(C_Gen, ir_arch):
 
       def gen_segm2addr(self, expr, prefetchers):
           ptr = expr.ptr.replace_expr(prefetchers)
-          new_expr = ExprMem(ptr, expr.size)
+          new_expr = ExprMem(ptr, expr.size) #XXX Why?
           return self.id_to_c(new_expr.ptr)
 
       def gen_check_taint_exception(self, address):
@@ -445,3 +445,72 @@ def test_cond_op_compose_slice_not_addr(expr, read):
     #else:
     #    only ExprInt left
     return True
+
+# API for ExprAssign
+def get_detailed_read_elements(dst, src):
+    """Retrieve read elements from @src and @dst of an ExprAssign
+
+    Read elements can be ExprMem or ExprId from @src.
+    Furthermore if @dst is an ExprMem, we retrieve any ExprMem or ExprId
+    of this ExprMem address (i.e. ExprMem.ptr).
+
+    This function will not only return a list of read elements but a
+    structure that will give us information about which byte of read
+    elements is influencing each byte of @dst.
+
+    To do so, the structure is organised like this:
+
+          {
+            full: []
+            elements:
+            start:
+            composition:
+            {
+              [
+                {
+                  full: []
+                  elements:
+                  start:
+                  composition: ...
+                },
+
+                ...
+
+                {
+                  full: []
+                  elements:
+                  start:
+                  composition: ...
+                }
+              ]
+            }
+          }
+
+    Elements in "full" fully taint current section of @dst if any taint
+    is found in them.
+
+    For elements in "elements" only bytes found with taint propagate
+    taint to equivalent bytes in @dst.
+
+
+    Elements put in "full":
+        - elements of addresses in @src (and @dst if it is an ExprMem)
+        - elements in ExprOp (XXX: could be more precise for some ExprOp)
+        - elements in condition of ExprCond (XXX: what about src1 and src2 ?)
+
+    When an ExprCompose is encounter, a new entry in "composition" is added.
+
+    ExprSlice of ExprId will be keep as is to be able to tell which bytes
+    of the ExprId need to be analyse.
+    """
+    read_elements = dict()
+    read_elements["full"] = get_read_elements_in_addr_with_real_size(dst, src)
+    read_elements["elements"] = set()
+    read_elements["composition"] = list()
+    read_elements["start"] = 0
+
+    src.visit(lambda x: visit_get_read_elements(x, read_elements["elements"]),
+            lambda x: test_cond_op_compose_slice_not_addr(x, read_elements))
+
+    return read_elements
+

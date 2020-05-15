@@ -1746,6 +1746,27 @@ class LLVMFunction(object):
         # Add content
         builder.position_at_end(entry_bbl)
 
+        # Pre-create label brances for the taint engine
+        try:
+            assert self.llvm_context.taint == True 
+            self.bb_list = dict()
+            self.not_branched = None
+            for irblocks_s in irblocks_list:
+                for irblock in irblocks_s:
+                    self.bb_list[str(irblock.loc_key)] = dict()
+                    for index, assignblk in enumerate(irblock):
+                        line_nb = 0
+                        for dst, src in viewitems(assignblk):
+                            if dst == self.llvm_context.ir_arch.IRDst:
+                                continue
+                            label = str(irblock.loc_key)+ "_taint_%d" % line_nb
+                            bb = self.builder.append_basic_block(label)
+                            self.bb_list[str(irblock.loc_key)][label] = bb
+                            line_nb += 1
+
+        except:
+            pass
+
         for instr, irblocks in zip(asmblock.lines, irblocks_list):
             instr_attrib, irblocks_attributes = codegen.get_attributes(
                 instr,
@@ -1757,6 +1778,8 @@ class LLVMFunction(object):
             # Pre-create basic blocks
             for irblock in irblocks:
                 self.append_basic_block(irblock.loc_key, overwrite=False)
+            
+
             # Generate the corresponding code
             for index, irblock in enumerate(irblocks):
                 new_irblock = self.llvm_context.ir_arch.irbloc_fix_regs_for_mode(
@@ -1774,7 +1797,11 @@ class LLVMFunction(object):
         # Branch entry_bbl on first label
         builder.position_at_end(entry_bbl)
         first_label_bbl = self.get_basic_block_by_loc_key(asmblock.loc_key)
-        builder.branch(first_label_bbl)
+        try:
+            assert self.llvm_context.taint == True
+            builder.branch(self.bb_list[first_label_bbl.name][first_label_bbl.name + "_taint_0"])
+        except:
+            builder.branch(first_label_bbl)
 
 
     # LLVMFunction manipulation

@@ -32,49 +32,32 @@ simple_llvm(struct taint_t* colors){
 }
 
 
-
-struct rb_root 
-taint_llvm_test(struct taint_t* colors,uint64_t color_index, uint64_t register_index, struct interval interval){
-  printf("\tTest function\n");
-  printf("interval start = %lu\n", interval.start);
-  printf("interval stop = %lu\n", interval.last);
-  printf("register index %"PRIu64 "\n", register_index);
-  printf("color index %"PRIu64 "\n", color_index);
-//  printf("addr of jitter %p\n",&jitter);
-//  printf("jitter ob base %d\n", jitter.ob_base);
-//  printf("addr of jitter pyvm %p\n",jitter.pyvm);
-//  printf("addr of jitter taint %p\n", jitter.taint);
-//  printf("addr of jitter jitter %p\n", jitter.jitter);
-//  printf("addr of jitter vmcpu %p\n", jitter.cpu);
-//  printf("addr of jitter taint ob_base %p\n", jitter.taint->ob_base);
-//  printf("addr of jitter taint taint %p\n", jitter.taint->taint);
-  printf("nb colors %"PRIu64 "\n", colors->nb_colors);
-//  printf("jitter nb colors %"PRIu64"\n", jitter->taint->taint->nb_colors);
-//  printf("nb register %"PRIu64"\n",colors->nb_registers);
-  //printf("max register size %"PRIu32"\n",colors->max_register_size);
-//  printf("addr of jitter %p\n",jitter);
-//  printf("addr of jitter ob base %p\n", &jitter->ob_base);
-//  printf("addr of jitter pyvm %p\n",jitter->pyvm);
-//  printf("addr of jitter taint %p\n", jitter->taint);
-//  printf("addr of jitter jitter %p\n", jitter->jitter);
-//  printf("addr of jitter vmcpu %p\n", jitter->cpu);
-//  printf("addr of jitter taint ob_base %p\n", &jitter->taint->ob_base);
-//  printf("addr of jitter taint taint %p\n", jitter->taint->taint);
-//  printf("addr of jitter_taint %p\n",jitter_taint);
-//  printf("addr of jitter_taint ob base %p\n", &jitter_taint->ob_base);
-//  printf("addr of jitter_taint pyvm %p\n",jitter_taint->pyvm);
-//  printf("addr of jitter_taint taint %p\n", jitter_taint->taint);
-//  printf("addr of jitter_taint jitter %p\n", jitter_taint->jitter);
-//  printf("addr of jitter_taint vmcpu %p\n", jitter_taint->cpu);
-//  printf("addr of jitter_taint taint ob_base %p\n", &jitter_taint->taint->ob_base);
-//  printf("addr of jitter_taint taint taint %p\n", jitter_taint->taint->taint);
-  printf("addr colors %p\n",&colors);
-  printf("addr color_index %p\n",&color_index);
-  printf("addr register_index %p\n", &register_index);
-  printf("add interval %p \n", &interval);
-//  printf("sizeof JitCpu %d ob_base %d pyvm %d taint %d jitter %d vmcpu %d\n", sizeof(JitCpu), sizeof(jitter.ob_base), sizeof(jitter.pyvm), sizeof(jitter.taint), sizeof(jitter.jitter), sizeof(jitter.cpu));
-
+void taint_create_rb(char* ptr){
+    struct rb_root tmp = interval_tree_new();
+    struct interval interval;
+    interval.start = 6;
+    interval.last = 7;
+    interval_tree_add(&tmp, interval);
+    interval.start = 2;
+    interval.last = 5;
+    interval_tree_add(&tmp, interval);
+    memcpy(ptr, (char*)&tmp, 4); 
 }
+
+void
+taint_llvm_test(char* ptr){
+    struct rb_root tmp;
+    memcpy(&tmp, ptr, 4);
+    interval_tree_print(&tmp); 
+}
+
+void
+interval_tree_new_llvm(char* ptr){
+    struct rb_root interval_tree;
+    interval_tree = interval_tree_new();
+    memcpy(ptr, (char*) &interval_tree, 4);
+}
+
 
 void
 taint_llvm_get_register_color(JitCpu* jitter, uint64_t color_index,
@@ -96,4 +79,98 @@ taint_llvm_get_register_color(JitCpu* jitter, uint64_t color_index,
     struct rb_root ret;
     ret = taint_get_register_color(jitter->taint->taint, color_index, register_index, interval);
     memcpy(ptr, (char*)&ret, 4);
+}
+
+void
+taint_merge_interval_tree(JitCpu* jitter, uint64_t register_index, uint64_t color_index, signed long offset, char* ptr)
+{
+   struct rb_root* reg = jitter->taint->taint->colors[color_index].registers[register_index];
+   struct rb_root bytes_tainted;
+   bytes_tainted = interval_tree_new();
+   memcpy(&bytes_tainted, ptr, 4);
+   
+   interval_tree_merge(reg, &bytes_tainted, offset);
+
+}
+
+
+void 
+get_generic_structure(JitCpu* jitter,
+                      uint64_t color_index,
+                      uint64_t register_index,
+                      struct interval interval,
+                      uint64_t type,
+                      char* ptr)
+{
+    struct rb_root structure_interval_tree;
+    if(type == REG)
+        structure_interval_tree = taint_get_register_color(jitter->taint->taint,
+                                                           color_index,
+                                                           register_index,
+                                                           interval);
+    else if(type == MEM)
+        structure_interval_tree = taint_get_memory(jitter->taint->taint,
+                                                   color_index,
+                                                   interval);
+    else
+    {
+        fprintf(stderr, "Can't get an other structure than registers or memory\n");
+        exit(1);
+    }
+    memcpy(ptr, (char*)&structure_interval_tree,4); 
+
+}
+
+void
+taint_generic_structure(uint64_t fully_tainted,
+                        uint64_t index_or_addr,
+                        uint64_t structure_size,
+                        uint64_t current_color,
+                        JitCpu* jitter,
+                        vm_mngr_t* vm_mngr,
+                        uint64_t type,
+                        char* ptr_before,
+                        char* ptr_new)
+{
+    struct rb_root taint_interval_tree_before;
+    struct rb_root taint_interval_tree_new;
+    memcpy(&taint_interval_tree_before, ptr_before, 4);
+    memcpy(&taint_interval_tree_new, ptr_new, 4);
+    if(type == REG) 
+        taint_register(fully_tainted,
+                       index_or_addr,
+                       structure_size,
+                       current_color, 
+                       jitter->taint->taint, 
+                       vm_mngr, 
+                       &taint_interval_tree_before, 
+                       &taint_interval_tree_new);
+    else if (type == MEM)
+        taint_memory(fully_tainted, 
+                     index_or_addr,
+                     structure_size, 
+                     current_color, 
+                     jitter->taint->taint, 
+                     vm_mngr, 
+                     &taint_interval_tree_before, 
+                     &taint_interval_tree_new);
+    else
+    {
+        fprintf(stderr, "Can't taint other than registers and memory\n");
+        exit(1);
+    }
+    interval_tree_free(&taint_interval_tree_before);
+    interval_tree_free(&taint_interval_tree_new);
+
+}
+
+uint64_t check_fully_tainted(char* ptr)
+{
+    uint64_t fully_tainted;
+    struct rb_root interval_tree;
+    memcpy(&interval_tree, ptr,4);
+    if(rb_first(&interval_tree)!= NULL){
+        fully_tainted = 1;
+    }
+    return fully_tainted;
 }
