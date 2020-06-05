@@ -1749,16 +1749,14 @@ class LLVMFunction(object):
         # Pre-create label brances for the taint engine
         try:
             assert self.llvm_context.taint == True 
+            self.first_label = self.get_basic_block_by_loc_key(asmblock.loc_key)
             self.bb_list = dict()
-            self.not_branched = None
             for irblocks_s in irblocks_list:
                 for irblock in irblocks_s:
                     self.bb_list[str(irblock.loc_key)] = dict()
                     for index, assignblk in enumerate(irblock):
                         line_nb = 0
                         for dst, src in viewitems(assignblk):
-                            if dst == self.llvm_context.ir_arch.IRDst:
-                                continue
                             label = str(irblock.loc_key)+ "_taint_%d" % line_nb
                             bb = self.builder.append_basic_block(label)
                             self.bb_list[str(irblock.loc_key)][label] = bb

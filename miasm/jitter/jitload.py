@@ -237,10 +237,11 @@ class Jitter(object):
         except ImportError:
             raise RuntimeError('Unsupported jitter: %s' % jit_type)
 
-        if taint :
-            self.jit = JitCore(self.ir_arch, self.bs, taint)
+        if taint and jit_type =="python":
+            raise ValueError("python does not support taint analysis for now")
         else:
-            self.jit = JitCore(self.ir_arch, self.bs)
+            self.jit = JitCore(self.ir_arch, self.bs, taint)    
+ 
 
         if isinstance(self.jit, JitCore_Cc_Base):
             self.jit.init_codegen(self.C_Gen(self.ir_arch))

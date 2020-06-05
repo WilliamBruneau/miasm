@@ -207,7 +207,7 @@ def makeTaintGen(C_Gen, ir_arch):
 
       def gen_segm2addr(self, expr, prefetchers):
           ptr = expr.ptr.replace_expr(prefetchers)
-          new_expr = ExprMem(ptr, expr.size) #XXX Why?
+          new_expr = ExprMem(ptr, expr.size)
           return self.id_to_c(new_expr.ptr)
 
       def gen_check_taint_exception(self, address):

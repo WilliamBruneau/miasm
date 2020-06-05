@@ -16,7 +16,7 @@ class JitCore_Python(jitcore.JitCore):
 
     SymbExecClass = EmulatedSymbExec
 
-    def __init__(self, ir_arch, bin_stream):
+    def __init__(self, ir_arch, bin_stream, taint = False):
         super(JitCore_Python, self).__init__(ir_arch, bin_stream)
         self.ir_arch = ir_arch
         self.ircfg = self.ir_arch.new_ircfg()

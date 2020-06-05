@@ -43,7 +43,10 @@ class JitCore_LLVM(jitcore.JitCore):
         self.taint = taint
         # Cache temporary dir
         # TODO:Mighy create another cache temporary dir for taint?
-        self.tempdir = os.path.join(tempfile.gettempdir(), "miasm_cache")
+        if self.taint:
+            self.tempdir = os.path.join(tempfile.gettempdir(), "miasm_cache_taint")
+        else:
+            self.tempdir = os.path.join(tempfile.gettempdir(), "miasm_cache")
         try:
             os.mkdir(self.tempdir, 0o755)
         except OSError:
@@ -97,6 +100,7 @@ class JitCore_LLVM(jitcore.JitCore):
         fname_out = os.path.join(self.tempdir, "%s.bc" % block_hash)
         if not os.access(fname_out, os.R_OK):
             # Build a function in the context
+            self.context.taint = self.taint
             if self.taint:  
                 func = LLVMFunction_Taint(self.context, self.FUNCNAME)
             else:

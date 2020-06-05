@@ -4,6 +4,7 @@ import tempfile
 import miasm.jitter.csts as csts
 from miasm.core.interval import interval
 from miasm.analysis.taint_codegen import makeTaintGen
+from miasm.jitter.jitcore_llvm import JitCore_LLVM
 
 
 def init_registers_index(jitter):
@@ -16,24 +17,37 @@ def init_registers_index(jitter):
         regs_index[reg] = index
         regs_name[index] = reg
         index += 1
-    jitter.jit.codegen.regs_index = regs_index
-    jitter.jit.codegen.regs_name = regs_name
+    try:
+        jitter.jit.context.regs_index = regs_index
+        jitter.jit.context.regs_name = regs_name
+    except:
+        jitter.jit.codegen.regs_index = regs_index
+        jitter.jit.codegen.regs_name = regs_name
+    
     return len(regs_index)
 
 def enable_taint_analysis(jitter, nb_colors=1):
     """ Init all component of the taint analysis engine """
 
-    # Enable generation of C code analysing taint
-    jitter.jit.codegen = makeTaintGen(jitter.C_Gen, jitter.ir_arch)
+    try :
+        # Necessary to the llvm jitter
+        jitter.jit.taint = True
+        jitter.jit.context.nb_colors = nb_colors
+    except:
+        # Enable generation of C code analysing taint
+        jitter.jit.codegen = makeTaintGen(jitter.C_Gen, jitter.ir_arch)
+        jitter.nb_colors = nb_colors
     nb_regs = init_registers_index(jitter)
     # Allocate taint structures
     jitter.taint.init_taint_analysis(nb_colors, nb_regs)
-    jitter.nb_colors = nb_colors
     # Switch to taint cache
     jitter.jit.tempdir = os.path.join(tempfile.gettempdir(), "miasm_cache_taint")
 
 def disable_taint_analysis(jitter):
-    jitter.jit.codegen = jitter.C_Gen(jitter.ir_arch)
+    if isinstance(self.jit, JitCore_LLVM):
+        jitter.jit.taint = False
+    else:
+        jitter.jit.codegen = jitter.C_Gen(jitter.ir_arch)
     jitter.jit.tempdir = os.path.join(tempfile.gettempdir(), "miasm_cache")
 
 # API usage examples
