@@ -19,13 +19,13 @@ class LLVMFunction_Taint(LLVMFunction):
 
         # Initialize the interval and get both the pointer of
         # interval.start and interval.last
-        interval_ptr = builder.alloca(self.llvm_context.interval_type)
+        interval_ptr = builder.alloca(self.llvm_context.interval_type, name = "interval_taint")
         self.local_vars["interval_ptr"] = interval_ptr
-        self.start_ptr = builder.gep(self.local_vars["interval_ptr"],[pyt2llvm(32, 0),pyt2llvm(32, 0)]) 
-        self.stop_ptr = builder.gep(self.local_vars["interval_ptr"],[pyt2llvm(32, 0),pyt2llvm(32, 1)])
+        self.start_ptr = builder.gep(self.local_vars["interval_ptr"],[pyt2llvm(32, 0),pyt2llvm(32, 0)],name="interval.start") 
+        self.stop_ptr = builder.gep(self.local_vars["interval_ptr"],[pyt2llvm(32, 0),pyt2llvm(32, 1)], name = "interval.stop")
 
 
-    def gen_get_taint_generic(self, name, color_index, get_type, start_check, stop_check):
+    def gen_get_taint_generic(self, name, color_index, get_type, start_check, stop_check, llvm_name = ""):
         """ Generation of llvm code, to get the intervals tainted with color_index of the register
             @param color_index the color that will be checked in the register, an i32
              @param reg_name the name of the register to checked, a string
@@ -57,25 +57,27 @@ class LLVMFunction_Taint(LLVMFunction):
                                         pyt2llvm(64, reg_index), 
                                         interval_struct, 
                                         pyt2llvm(64, get_type)
-                                    ],
-                                    self.builder)
+                                    ], self.builder, var_name = llvm_name)
         return interval_tree
 
     def gen_jump(self, expr_loc):
         #TODO Comments
         """Generate the jump to the expr_loc
+
         """
-        assert expr_loc.is_loc() == True
-        
-    
-        try:
-            # Making an internal jump
-            label = str(expr_loc.loc_key) + "_taint_0"
-            self.builder.branch(self.bb_list[str(expr_loc.loc_key)][label])
-            return
-        except:
+        # In fact its not always an expr_loc?
+        if isinstance(expr_loc, ExprLoc) : 
+            try:
+                # Making an internal jump
+                label = str(expr_loc.loc_key) + "_taint_0"
+                self.builder.branch(self.bb_list[str(expr_loc.loc_key)][label])
+                return
+            except:
+                self.builder.branch(self.first_label)
+                return
+        else : 
             self.builder.branch(self.first_label)
-            return
+            return 
         aeraz
 
         #XXX This part should be erased (Kept until there are no segfault)
@@ -119,31 +121,18 @@ class LLVMFunction_Taint(LLVMFunction):
         # In this case we dont know yet what to do
 
         # Evaluation of the IRDst = Expr(...) to know the branching
-        # Do I need to remake the expr2cases for my bbls?
-        case2dst, evaluated = self.expr2cases(src)
         
-        # A jump to one assignblk, without needing to evaluate
+        # A jump to a specific assignblk, without needing to evaluate
+        # XXX can be optimize by only computing the case2dst and not the evaluated
+        case2dst, evaluated = self.expr2cases(src)
         if len(case2dst) ==1:
             self.gen_jump(next(iter(viewvalues(case2dst))))
             
-        # A jump to multiple assignblk, must be handled to analyze only the code really executed
+        # A jump to multiple assignblk, must be handled to analyze only the code really executed, 
+        # j'ai menti
         else:
             current_bbl = self.builder.block
-            print(dst, src)
-            # Gen the out cases of the assignblks
-            case2bbl = {}
-            for case, dst in list(viewitems(case2dst)):
-                name = "switch_%s_case_%d" % (label, case)
-                bbl = self.append_basic_block(name)
-                case2bbl[case] = bbl
-                self.builder.position_at_start(bbl)
-                self.gen_jump(dst)
-            self.builder.position_at_end(current_bbl)
-            switch = self.builder.switch(evaluated, case2bbl[0])
-            for i, bbl in viewitems(case2bbl):
-                if i==0:
-                    continue
-                switch.add_case(i,bbl)
+            self.builder.branch(self.first_label)
              
         
 
@@ -167,7 +156,7 @@ class LLVMFunction_Taint(LLVMFunction):
                 # Infos on the element
                 start = self.add_ir(element.ptr)
                 start_32 = self.builder.zext(start, LLVMType.IntType(32))
-                size = pyt2llvm(32, int(element.size/8))
+                size = pyt2llvm(32, int(element.size/8-1))
                 stop = builder.add(start_32, size)
 
                 # Get the interval_tree of the element
@@ -228,6 +217,7 @@ class LLVMFunction_Taint(LLVMFunction):
 
         current_block = self.builder.block
         label = current_block.name + "_taint_0"
+        print(irblock)
     
         # Cycling through each assignblock of the irblock
         for index, assignblk in enumerate(irblock):
@@ -235,6 +225,9 @@ class LLVMFunction_Taint(LLVMFunction):
 
             # Cycling through each ExprAssign of the assignblk 
             for dst, src in viewitems(assignblk):
+                if label == "loc_key_57_taint_0":
+                    print(type(src))
+                
                 #TODO gérer le cache
 
                 #print("Analysing %s = %s" % (dst,src)) #XXX commented to debug
@@ -243,7 +236,7 @@ class LLVMFunction_Taint(LLVMFunction):
                     # Special case, dont know if it will be kept, 
                     # of form - IRdst = Expr(...),
                     #         - Expr(...) = loc_key
-                    # We can also chose to not do anything in this case
+                    # We could also choose to not do anything in this case
                     if src == self.llvm_context.ir_arch.IRDst :
                         print("Analysing %s = %s, Special case" % (dst, src))
                         self.gen_branch(dst, src, current_block, label = label)
@@ -256,6 +249,9 @@ class LLVMFunction_Taint(LLVMFunction):
                     while color_index < self.llvm_context.nb_colors:
                         self.current_color = pyt2llvm(64, color_index)
                         read_elements = get_detailed_read_elements(dst, src)
+                        if label == "loc_key_57_taint_0":
+                            print(read_elements)
+                            print(read_elements["composition"])
                         fc_ptr = self.mod.get_global("taint_generic_structure")
                         fc_new = self.mod.get_global("interval_tree_new_llvm")
                         self.interval_tree_new = externalCall(fc_new, [], self.builder) 
@@ -266,7 +262,7 @@ class LLVMFunction_Taint(LLVMFunction):
                             addr_end = self.builder.add(addr_start_32, pyt2llvm(32, int(dst.size/8 - 1)))
                             
                             # Get the interval_tree of the dst
-                            interval_tree_before = self.gen_get_taint_generic(dst, self.current_color, "mem", addr_start_32, addr_end)
+                            interval_tree_before = self.gen_get_taint_generic(dst, self.current_color, "mem", addr_start_32, addr_end, llvm_name = "interval_tree_before")
 
                            
                             # Generate the code to analyze all the elements 
@@ -277,10 +273,11 @@ class LLVMFunction_Taint(LLVMFunction):
                             structure_size = pyt2llvm(64, int(dst.size/8 - 1))
                             structure_type = pyt2llvm(64, 2)
                             is_equal= self.builder.icmp_signed("==",addr_start_32, pyt2llvm(32, 4198424))
-                            with self.builder.if_then(is_equal) as (then_block):
-                                self.printf("This one is wrong\n")
-                                self.printf(str(dst))
-                                self.builder.ret(pyt2llvm(64, -1))
+                           # with self.builder.if_then(is_equal) as (then_block):
+                           #     self.printf("This one is wrong\n")
+                           #     self.printf("Source : " + str(src)+"\n")
+                           #     self.printf("Dst :" + str(dst) + "\n")
+                           #     self.builder.ret(pyt2llvm(64, -1))
 
 
                         # The dst is a register in this case
@@ -420,9 +417,9 @@ def enable_taint_analysis(jitter, nb_colors = 1):
 def pyt2llvm(size, value):
     return llvm_ir.Constant(LLVMType.IntType(size),value)
 
-def externalCall(name, args, builder):
+def externalCall(fc_ptr, args,builder, var_name = ""):
     rb_root_pointer = builder.alloca(LLVMType.IntType(32))
     rb_root_u8 = builder.bitcast(rb_root_pointer,llvm_ir.IntType(8).as_pointer())
     args.append(rb_root_u8)
-    builder.call(name,args)
+    builder.call(fc_ptr, args, name = var_name )
     return rb_root_u8

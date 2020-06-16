@@ -1764,7 +1764,7 @@ class LLVMFunction(object):
 
         except:
             pass
-
+        print(asmblock)
         for instr, irblocks in zip(asmblock.lines, irblocks_list):
             instr_attrib, irblocks_attributes = codegen.get_attributes(
                 instr,
@@ -1776,7 +1776,7 @@ class LLVMFunction(object):
             # Pre-create basic blocks
             for irblock in irblocks:
                 self.append_basic_block(irblock.loc_key, overwrite=False)
-            
+            print(instr) 
 
             # Generate the corresponding code
             for index, irblock in enumerate(irblocks):

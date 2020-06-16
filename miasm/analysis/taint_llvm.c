@@ -18,19 +18,23 @@
 
 void
 interval_tree_new_llvm(char* ptr){
+    //fprintf(stderr, "Enter : interval_tree_new_llvm\n");
     struct rb_root interval_tree;
     interval_tree = interval_tree_new();
     memcpy(ptr, (char*) &interval_tree, 4);
+    //fprintf(stderr, "Exit : interval_tree_new_llvm\n");
 }
 
 
 void
 taint_merge_interval_tree(signed long offset, char* ptr_new, char* ptr_tmp)
 {
+   //fprintf(stderr, "Enter : taint_merge_interval_tree\n ");
    struct rb_root interval_tree_new, interval_tree_tmp;
    memcpy(&interval_tree_new, ptr_new, 4);
    memcpy(&interval_tree_tmp, ptr_tmp, 4);
    interval_tree_merge(&interval_tree_new, &interval_tree_tmp, offset);
+   //fprintf(stderr, "Exit : taint_merge_interval_tree\n ");
 
 }
 
@@ -43,6 +47,7 @@ get_generic_structure(JitCpu* jitter,
                       uint64_t type,
                       char* ptr)
 {
+    //fprintf(stderr, "Enter : get_generic_structure\n");
     struct rb_root structure_interval_tree;
     long test = 0;
    // fprintf(stderr, "Get generic\n");
@@ -69,6 +74,7 @@ get_generic_structure(JitCpu* jitter,
         exit(1);
     }
     memcpy(ptr, (char*)&structure_interval_tree, 4);
+    //fprintf(stderr, "Exit : get_generic_structure\n");
 
 }
 
@@ -83,8 +89,7 @@ taint_generic_structure(uint64_t fully_tainted,
                         char* ptr_before,
                         char* ptr_new)
 {
-    //fprintf(stderr,"Taint generic\n");
-    //fprintf(stderr, "type : %lld, value %lld \n", type, index_or_addr);
+    //fprintf(stderr,"Enter : taint_generic_structure\n");
     struct rb_root taint_interval_tree_before;
     struct rb_root taint_interval_tree_new;
     memcpy(&taint_interval_tree_before, ptr_before, 4);
@@ -114,16 +119,19 @@ taint_generic_structure(uint64_t fully_tainted,
     }
     interval_tree_free(&taint_interval_tree_before);
     interval_tree_free(&taint_interval_tree_new);
+    //fprintf(stderr,"Exit : taint_generic_structure\n");
 
 }
 
 uint64_t check_rb_tree_not_empty(char* ptr)
 {
+    //fprintf(stderr,"Enter : check_rb_tree_not_empty\n");
     uint64_t fully_tainted = 0;
     struct rb_root interval_tree;
     memcpy(&interval_tree, ptr,4);
     if(rb_first(&interval_tree)!= NULL){
         fully_tainted = 1;
     }
+    //fprintf(stderr,"Exit : check_rb_tree_not_empty\n");
     return fully_tainted;
 }
